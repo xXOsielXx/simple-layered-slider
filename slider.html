@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  background: #f5f5f5;
+  font-family: Arial, sans-serif;
+}
+
+.slider {
+  position: relative;
+  width: 90%;
+  max-width: 1000px;
+  margin: 60px auto;
+  overflow: hidden;
+}
+
+/* TRACK */
+.track {
+  display: flex;
+  transition: transform 0.5s ease;
+  will-change: transform;
+}
+
+.slide {
+  min-width: 100%;
+  flex-shrink: 0;
+  position: relative;
+  aspect-ratio: 16 / 9;
+}
+
+.img {
+  position: absolute;
+  transition: all 0.6s ease;
+}
+
+.desktop {
+  width: clamp(250px, 65%, 800px);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.mobile {
+  width: clamp(120px, 23%, 300px);
+  right: 10%;
+  top: -10%;
+  z-index: 1;
+  transform: scale(0.5);
+  filter: brightness(0.5);
+}
+
+.slide.active .desktop {
+  transform: translate(-80%, -40%) scale(0.85);
+  filter: brightness(0.5);
+}
+
+.slide.active .mobile {
+  z-index: 3;
+  transform: translate(-125%, 28%) scale(1);
+  filter: brightness(1);
+}
+
+.img img {
+  width: 100%;
+  display: block;
+}
+
+.switch {
+  position: absolute;
+  top: 0%;
+  right: 30%;
+  transform: translateX(-50%);
+  font-size: 32px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 20px;
+}
+
+.nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 40px;
+  cursor: pointer;
+}
+
+.prev, .next {
+  z-index: 5;
+}
+
+.prev { left: 5px; }
+.next { right: 5px; }
+
+/* PAGINATION */
+.pagination {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #bbb;
+  cursor: pointer;
+}
+
+.dot.active {
+  background: #222;
+}
+
+/* MOBILE */
+@media screen and (max-width: 550px) {
+  .desktop {
+    width: 90%;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .mobile {
+    width: 50%;
+    right: -15%;
+    top: -20%;
+    bottom: 0;
+    transform: scale(0.4);
+  }
+
+  .slide.active .desktop {
+    transform: translate(-60%, -60%) scale(0.8);
+  }
+
+  .slide.active .mobile {
+    transform: translate(-80%, 28%) scale(1);
+  }
+
+  .switch {
+    right: 50%;
+    transform: translateX(50%);
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="slider">
+
+  <div class="track">
+
+    <!-- SLIDE 1 -->
+    <div class="slide">
+      <div class="img desktop">
+        <a href=""><img src="mockup-desktop-placeholder.png"></a>
+      </div>
+      <div class="img mobile">
+        <a href=""><img src="mockup-mobile-placeholder.png"></a>
+      </div>
+      <button class="switch">↺</button>
+    </div>
+
+    <!-- SLIDE 2 -->
+    <div class="slide">
+      <div class="img desktop">
+        <a href=""><img src="mockup-desktop-placeholder.png"></a>
+      </div>
+      <div class="img mobile">
+        <a href=""><img src="mockup-mobile-placeholder.png"></a>
+      </div>
+      <button class="switch">↺</button>
+    </div>
+
+  </div>
+
+  <div class="nav prev">←</div>
+  <div class="nav next">→</div>
+  <div class="pagination"></div>
+
+</div>
+
+<script>
+const track = document.querySelector(".track");
+const slides = document.querySelectorAll(".slide");
+const prev = document.querySelector(".prev");
+const next = document.querySelector(".next");
+const pagination = document.querySelector(".pagination");
+
+let current = 0;
+
+/* --- DELAYS PER SLIDE --- */
+function applyDelays(slide) {
+  const desktop = slide.querySelector(".desktop");
+  const mobile = slide.querySelector(".mobile");
+
+  if (slide.classList.contains("active")) {
+    desktop.style.transitionDelay = "0s";
+    mobile.style.transitionDelay = "0.1s";
+  } else {
+    desktop.style.transitionDelay = "0.1s";
+    mobile.style.transitionDelay = "0s";
+  }
+}
+
+/* --- INIT --- */
+slides.forEach((slide, i) => {
+
+  applyDelays(slide);
+
+  // switch button
+  slide.querySelector(".switch").onclick = () => {
+    slide.classList.toggle("active");
+    applyDelays(slide);
+  };
+
+  // dots
+  const dot = document.createElement("div");
+  dot.classList.add("dot");
+  if (i === 0) dot.classList.add("active");
+
+  dot.onclick = () => goToSlide(i);
+  pagination.appendChild(dot);
+});
+
+/* --- PAGINATION --- */
+function updatePagination() {
+  document.querySelectorAll(".dot").forEach((dot, i) => {
+    dot.classList.toggle("active", i === current);
+  });
+}
+
+/* --- SLIDE CHANGE --- */
+function goToSlide(index) {
+  current = index;
+  track.style.transform = `translateX(-${current * 100}%)`;
+  updatePagination();
+}
+
+/* --- NAV --- */
+next.onclick = () => goToSlide((current + 1) % slides.length);
+prev.onclick = () => goToSlide((current - 1 + slides.length) % slides.length);
+
+/* --- SMOOTH SWIPE --- */
+let startX = 0;
+let startY = 0;
+let currentTranslate = 0;
+let isDragging = false;
+let isHorizontal = null;
+
+const slider = document.querySelector(".slider");
+
+slider.addEventListener("touchstart", e => {
+  if (
+    e.target.closest(".nav") ||
+    e.target.closest(".switch") ||
+    e.target.closest(".pagination")
+  ) return;
+
+  isDragging = true;
+  isHorizontal = null;
+
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
+});
+
+slider.addEventListener("touchmove", e => {
+  if (!isDragging) return;
+
+  const currentX = e.touches[0].clientX;
+  const currentY = e.touches[0].clientY;
+
+  const diffX = currentX - startX;
+  const diffY = currentY - startY;
+
+  // decidir dirección SOLO una vez
+  if (isHorizontal === null) {
+    isHorizontal = Math.abs(diffX) > Math.abs(diffY);
+  }
+
+  // si es vertical → no hacemos nada (deja hacer scroll)
+  if (!isHorizontal) return;
+
+  // evitar scroll vertical del navegador
+  e.preventDefault();
+
+  currentTranslate = -current * slider.offsetWidth + diffX;
+  track.style.transform = `translateX(${currentTranslate}px)`;
+});
+
+slider.addEventListener("touchend", () => {
+  if (!isDragging || !isHorizontal) return;
+
+  isDragging = false;
+
+  const moved = currentTranslate + current * slider.offsetWidth;
+
+  if (moved < -50) current++;
+  if (moved > 50) current--;
+
+  if (current < 0) current = slides.length - 1;
+  if (current >= slides.length) current = 0;
+
+  goToSlide(current);
+});
+</script>
+
+</body>
+</html>
