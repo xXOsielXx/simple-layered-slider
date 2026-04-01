@@ -6,6 +6,20 @@ const pagination = document.querySelector(".pagination");
 
 let current = 0;
 
+/* --- MOBILE ACTIVE CLASS --- */
+viewportWidth = 480
+
+function handleMobileActiveClass() {
+  if (window.innerWidth <= viewportWidth) {
+    slides.forEach(slide => slide.classList.add("active"));
+  } else {
+    slides.forEach(slide => slide.classList.remove("active"));
+  }
+}
+
+window.addEventListener("resize", handleMobileActiveClass);
+handleMobileActiveClass();
+
 /* --- DELAYS PER SLIDE --- */
 function applyDelays(slide) {
   const desktop = slide.querySelector(".desktop");
@@ -90,15 +104,12 @@ slider.addEventListener("touchmove", e => {
   const diffX = currentX - startX;
   const diffY = currentY - startY;
 
-  // decidir dirección SOLO una vez
   if (isHorizontal === null) {
     isHorizontal = Math.abs(diffX) > Math.abs(diffY);
   }
 
-  // si es vertical → no hacemos nada (deja hacer scroll)
   if (!isHorizontal) return;
 
-  // evitar scroll vertical del navegador
   e.preventDefault();
 
   currentTranslate = -current * slider.offsetWidth + diffX;
